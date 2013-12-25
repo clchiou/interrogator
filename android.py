@@ -36,12 +36,19 @@ class Interrogator:
 include {android_ndk}/build/core/build-local.mk
 
 interrogate:
+\t@echo TARGET_CCFLAGS=$(call get-src-file-target-cflags,{module}.cpp)
 \t@echo TARGET_CC=$(TARGET_CC)
-\t@echo TARGET_CPP=$(TARGET_CPP)
-\t@echo TARGET_CXX=$(TARGET_CXX)
 \t@echo TARGET_CFLAGS=$(TARGET_CFLAGS)
+\t@echo TARGET_CPP=$(TARGET_CPP)
 \t@echo TARGET_CPPFLAGS=$(TARGET_CPPFLAGS)
+\t@echo TARGET_CXX=$(TARGET_CXX)
 \t@echo TARGET_CXXFLAGS=$(TARGET_CXXFLAGS)
+\t@echo TARGET_LD=$(TARGET_LD)
+\t@echo TARGET_LDFLAGS=$(TARGET_LDFLAGS)
+\t@echo TARGET_AR=$(TARGET_AR)
+\t@echo TARGET_ARFLAGS=$(TARGET_ARFLAGS)
+\t@echo TARGET_STRIP=$(TARGET_STRIP)
+\t@echo TARGET_OBJCOPY=$(TARGET_OBJCOPY)
 \t@echo LOCAL_CFLAGS=$(LOCAL_CFLAGS)
 \t@echo LOCAL_CPPFLAGS=$(LOCAL_CPPFLAGS)
 \t@echo LOCAL_CXXFLAGS=$(LOCAL_CXXFLAGS)
@@ -83,7 +90,7 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
 LOCAL_MODULE    := {module}
-LOCAL_SRC_FILES := InterrogateActivity.cpp
+LOCAL_SRC_FILES := {module}.cpp
 
 include $({build_type})
 '''
