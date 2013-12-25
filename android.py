@@ -122,8 +122,10 @@ def create_temporary_directory(*args):
     See tempfile.mkdtemp() for argument documentation.
     '''
     path = tempfile.mkdtemp(*args)
-    yield path
-    shutil.rmtree(path)
+    try:
+        yield path
+    finally:
+        shutil.rmtree(path)
 
 
 def create_file(path, contents):
