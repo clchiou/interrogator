@@ -30,7 +30,8 @@ class Interrogator:
         self.interrogate_room = interrogate_room
         self.android_ndk = android_ndk
         self.build_type = None
-        self.build_vars = None
+        self.android_vars = None
+        self.application_vars = None
         # Make Makefile
         makefile = '''# Makefile
 include {android_ndk}/build/core/build-local.mk
@@ -65,10 +66,11 @@ interrogate:
                 android_ndk=self.android_ndk, module=self.MODULE)
         create_file(os.path.join(self.interrogate_room, 'Makefile'), makefile)
 
-    def question(self, build_type=STATIC_LIBRARY, build_vars=None):
+    def question(self, build_type=STATIC_LIBRARY, android_vars=None,
+            application_vars=None):
         '''Question NDK for specific build information.'''
-        self.set_build_type(build_type)
-        self.set_build_vars(build_vars)
+        self.set_android_vars(build_type, android_vars)
+        self.set_application_vars(application_vars)
         # Now, question NDK!
         cmd = 'make interrogate'.split()
         output = subprocess.check_output(cmd, cwd=self.interrogate_room)
@@ -77,40 +79,40 @@ interrogate:
             value = value.strip()
             yield name, value
 
-    def set_build_type(self, build_type):
-        '''Set build type for later questioning.'''
+    def set_android_vars(self, build_type=STATIC_LIBRARY, android_vars=None):
+        '''Set build variables in Android.mk.'''
         assert build_type in self.BUILD_TYPES
-        if self.build_type == build_type:
+        if (self.build_type == build_type and
+                self.android_vars is not None and android_vars is None):
             return
         self.build_type = build_type
+        self.android_vars = android_vars
         # Make Android.mk
-        android_mk = '''# Android.mk
-LOCAL_PATH := $(call my-dir)
-
-include $(CLEAR_VARS)
-
-LOCAL_MODULE    := {module}
-LOCAL_SRC_FILES := {module}.cpp
-
-include $({build_type})
-'''
-        android_mk = android_mk.format(
-                build_type=self.build_type, module=self.MODULE)
+        android_mk = StringIO()
+        android_mk.write('# Android.mk\n')
+        android_mk.write('LOCAL_PATH := $(call my-dir)\n')
+        android_mk.write('include $(CLEAR_VARS)\n')
+        android_mk.write('LOCAL_MODULE := %s\n' % self.MODULE)
+        android_mk.write('LOCAL_SRC_FILES := %s.cpp\n' % self.MODULE)
+        if self.android_vars:
+            for name in self.android_vars:
+                android_mk.write('%s := %s\n' % (name, self.android_vars[name]))
+        android_mk.write('include $(%s)\n' % self.build_type)
         create_file(os.path.join(self.interrogate_room, 'jni/Android.mk'),
-                android_mk)
+                android_mk.getvalue())
 
-    def set_build_vars(self, build_vars):
+    def set_application_vars(self, application_vars):
         '''Set build variables in Application.mk.'''
-        if self.build_vars and not build_vars:
+        if self.application_vars is not None and application_vars is None:
             return
-        self.build_vars = build_vars
+        self.application_vars = application_vars
         # Make Application.mk
         application_mk = StringIO()
         application_mk.write('# Application.mk\n')
-        if self.build_vars:
-            for name in self.build_vars:
+        if self.application_vars:
+            for name in self.application_vars:
                 application_mk.write('%s := %s\n' %
-                        (name, self.build_vars[name]))
+                        (name, self.application_vars[name]))
         create_file(os.path.join(self.interrogate_room, 'jni/Application.mk'),
                 application_mk.getvalue())
 
@@ -150,5 +152,13 @@ if __name__ == '__main__':
     # Sample usage of Interrogator
     import sys
     with interrogate(sys.argv[1]) as _interrogator:
+        _interrogator.set_application_vars(application_vars={
+            'APP_OPTIM': 'release',
+            'API_ABI': 'armeabi',
+            'API_PLATFORM': 'android-3',
+        })
+        _interrogator.set_android_vars(
+                build_type=Interrogator.STATIC_LIBRARY,
+                android_vars={'LOCAL_ARM_MODE': 'arm'})
         for _name, _value in _interrogator.question():
             print '%s=%s' % (_name, _value)
