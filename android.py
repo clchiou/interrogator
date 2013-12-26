@@ -62,12 +62,13 @@ interrogate:
 
 .PHONY: interrogate
 '''
-        makefile = makefile.format(
-                android_ndk=self.android_ndk, module=self.MODULE)
+        makefile = makefile.format(android_ndk=self.android_ndk,
+                                   module=self.MODULE)
         create_file(os.path.join(self.interrogate_room, 'Makefile'), makefile)
 
-    def question(self, build_type=STATIC_LIBRARY, android_vars=None,
-            application_vars=None):
+    def question(self,
+                 build_type=STATIC_LIBRARY, android_vars=None,
+                 application_vars=None):
         '''Question NDK for specific build information.'''
         self.set_android_vars(build_type, android_vars)
         self.set_application_vars(application_vars)
@@ -96,10 +97,11 @@ interrogate:
         android_mk.write('LOCAL_SRC_FILES := %s.cpp\n' % self.MODULE)
         if self.android_vars:
             for name in self.android_vars:
-                android_mk.write('%s := %s\n' % (name, self.android_vars[name]))
+                android_mk.write('%s := %s\n' %
+                                 (name, self.android_vars[name]))
         android_mk.write('include $(%s)\n' % self.build_type)
         create_file(os.path.join(self.interrogate_room, 'jni/Android.mk'),
-                android_mk.getvalue())
+                    android_mk.getvalue())
 
     def set_application_vars(self, application_vars):
         '''Set build variables in Application.mk.'''
@@ -112,9 +114,9 @@ interrogate:
         if self.application_vars:
             for name in self.application_vars:
                 application_mk.write('%s := %s\n' %
-                        (name, self.application_vars[name]))
+                                     (name, self.application_vars[name]))
         create_file(os.path.join(self.interrogate_room, 'jni/Application.mk'),
-                application_mk.getvalue())
+                    application_mk.getvalue())
 
 
 @contextlib.contextmanager
@@ -157,8 +159,7 @@ if __name__ == '__main__':
             'API_ABI': 'armeabi',
             'API_PLATFORM': 'android-3',
         })
-        _interrogator.set_android_vars(
-                build_type=Interrogator.STATIC_LIBRARY,
-                android_vars={'LOCAL_ARM_MODE': 'arm'})
+        _interrogator.set_android_vars(build_type=Interrogator.STATIC_LIBRARY,
+                                       android_vars={'LOCAL_ARM_MODE': 'arm'})
         for _name, _value in _interrogator.question():
             print '%s=%s' % (_name, _value)
